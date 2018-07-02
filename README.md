@@ -1,2 +1,2 @@
-# economia_da_saude
+# Economia da saúde
 Tópicos em economia da saúde: distribuição espacial dos equipamentos de mamografia no estado do Paraná e casos de óbito de mulheres por neoplasia malígna mamal

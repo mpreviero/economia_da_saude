@@ -33,3 +33,5 @@ Abaixo uma breve descrição da base de dados utilizada:
 ## _Workflow_
 - [Malha de Munícipios no Estado do Paraná](https://github.com/rdurl0/economia_da_saude/blob/master/1_Malha_de_municipios_no_estado_do_Paran%C3%A1.md)
 - [Unindo bases: Dados (DATASUS) e _shapefile_](https://github.com/rdurl0/economia_da_saude/blob/master/2_Bases_de_dados.md)
+- [Tabelas de estatísticas descritivas e mapas](https://github.com/rdurl0/economia_da_saude/blob/master/3_Analise_exploratoria.md): edição básica para laTeX 
+

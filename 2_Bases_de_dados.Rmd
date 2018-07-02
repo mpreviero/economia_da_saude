@@ -1,0 +1,321 @@
+---
+title: 'Unindo bases: Dados (DATASUS) e _shapefile_'
+output:
+    github_document:
+     toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE, message=FALSE}
+rm(list=ls())
+```
+
+#Obtendo mapas e tabelas
+
+## Mapa: Objeto `sf`
+
+Descrição: malha de municípios do Estado do Paraná  
+
+Período: 2015  
+Fonte: [IBGE - Malha Municipal 2015](ftp://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_municipais/municipio_2015/Leia-me_Malha_2015_final.pdf)
+
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+library(janitor)
+library(sf)
+
+sf_parana <- st_read("./shp/pr/41MUE250GC_SIR.shp", quiet = TRUE) %>%
+  transmute(municipio = as.character(NM_MUNICIP),
+            cod_ibge  = as.integer(paste0(CD_GEOCMU))) %>%
+  clean_names() %>%
+  arrange(municipio) %>%
+  glimpse()
+
+# st_write(sf_parana, "./Tabelas/shp/pr/sf_parana.shp")
+```
+
+# TABNET: Equiptos de mamógrafos, óbitos por câncer de mama e planos de saúde
+
+## Número de Mamógrafos
+
+Descrição: Número de mamógrafos existentes, em uso e disponíveis pelo SUS.  
+
+Período: maio/2010  
+Fonte: [TABNET/CNES](http://www2.datasus.gov.br/DATASUS/index.php?area=0204&id=11671&VObj=http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/equipo)
+
+```{r}
+library(readxl)
+
+mamografos_parana <- read_excel("./Tabelas/mamografos_parana.xlsx") %>%
+ mutate(cod_munici = str_sub(municipio, start = 1L, end = 6L),
+        munic      = str_sub(municipio, start = 8L))  %>%
+ mutate_if(is.character, funs(toupper)) %>%
+ mutate_if(is.double, funs(as.integer)) %>%
+ select(-c(1))  %>%
+ rename(municipio = munic,
+        mamografos_sus = mamografos_disponiveis) %>%
+ select(cod_munici, municipio, everything()) %>%
+ glimpse()
+
+#write_rds(mamografos_parana, "./Tabelas/mamografos_parana.rds")
+```
+
+## Óbitos por câncer de mama
+
+Descrição: Óbitos p/Residência,  por Município e Faixa Etária
+Grupo CID-10: Neoplasias malignas da mama
+Cor/raça: Branca, Preta, Amarela, Parda, Indígena, Ignorado
+
+Período:2010
+
+Fonte: [MS/SVS/CGIAE - Sistema de Informações sobre Mortalidade - SIM](http://www2.datasus.gov.br/DATASUS/index.php?area=0205&id=6937)
+
+```{r}
+obitos_cancer <- read_excel("./Tabelas/obitos_cancer.xlsx") %>%
+ mutate(cod_munici = str_sub(municipio, start = 1L, end = 6L),
+        munic      = str_sub(municipio, start = 8L))  %>%
+ mutate_if(is.character, funs(toupper)) %>%
+ mutate_if(is.double, funs(as.integer)) %>%
+ select(-c(1))  %>%
+ rename(municipio = munic) %>%
+ clean_names() %>%
+ select(cod_munici, municipio, everything()) %>%
+ glimpse()
+
+#write_rds(obitos_cancer, "./Tabelas/obitos_cancer.rds")
+```
+
+## Mulheres beneficiárias de plano de saúde privado por municipio e faixa etária
+
+Descrição: Beneficiários de planos privados de saúde - sexo feminino e por faixa etária (Excl. Odontológico por Município e Faixa etária). O termo "beneficiário" refere-se a vínculos aos planos de saúde, podendo incluir vários vínculos para um mesmo indivíduo.
+
+UF: Paraná  
+Sexo: Feminino  
+Período: jun/2010  
+Fonte: [Agência nacional de Saúde (ANS) - Dados e indicadores do setor](http://www.ans.gov.br/anstabnet/cgi-bin/dh?dados/tabnet_02.def)
+
+
+```{r}
+planos_parana <- read_excel("./Tabelas/planos_de_saude_privado.xlsx")[1:366,] %>%
+ mutate(cod_munici = str_sub(municipio, start = 1L, end = 6L),
+        munic      = str_sub(municipio, start = 8L)) %>%
+ mutate_if(is.character, funs(toupper)) %>%
+ mutate_if(is.double, funs(as.integer)) %>%
+ select(-c(1)) %>%
+ rename(municipio = munic,
+        planos_saude = Total) %>% 
+  # um problema é que a base de dado não contém 36 municipios que não tem registro de plano de saúde
+  # então, 'mamografos_parna$disponiveis_sus' faz o pivot para que meu resultado inclua esses 36 municipios na bd
+  full_join(mamografos_parana %>% select(c(municipio, cod_munici, mamografos_sus)),
+           .,
+           by=c("municipio", "cod_munici")) %>%
+ select(c(2,1,23)) %>%
+ glimpse()
+
+
+#readr::write_rds(planos_parana, "./Tabelas/planos_de_saude_privado.rds")
+```
+
+
+## Variáveis de controle (Atlas Brasil)
+
+
+```{r}
+atlas_brasil <- read_excel("./Tabelas/atlas_brasil_consulta.xlsx") %>%
+  mutate_at(c(4:6, 47:48, 29:39, 41:46, 12:28), funs(as.integer)) %>%
+  select(c(1,               # municipios
+           4:6, 47:48,      # população total
+           29:39, 41:46,    # população: sexo feminino por faixa etária
+           12:28,           # população: sexo masculino por faixa etária
+           2, 3, 11, 40, 49,# gini, esp. de vida ao nascer, envelhecimento, analfabetismo
+           50:56,           # renda per capita
+           7:10     )) %>%  # idhm
+  clean_names() %>%
+  arrange(espacialidades) %>%
+  bind_cols(select(mamografos_parana, c(cod_munici, municipio)), .) %>%
+  select(-espacialidades) %>%
+  glimpse()
+
+#readr::write_rds(atlas_brasil, "./Tabelas/atlas_brasil_consulta.rds")
+```
+
+# Juntando as bases
+
+```{r warning=FALSE, message=FALSE}
+rm(list=ls())
+
+library(tidyverse)
+library(sf)
+library(readxl)
+
+# o mapa...
+sf_parana <- st_read(".\\shp\\pr\\sf_parana.shp", quiet = TRUE) %>%
+  select(cod_ibge, everything())
+
+# ...os equiptos de mamógrafos...
+mamografos_parana <- read_rds("./Tabelas/mamografos_parana.rds") %>%
+  mutate(municipio = as.factor(municipio))
+
+# ...Os óbitos por câncer...
+obitos_cancer <- read_rds("./Tabelas/obitos_cancer.rds") %>%
+  mutate(municipio = as.factor(municipio)) %>%
+  select(-cod_munici)
+
+# ...os planos de saúde...
+planos_parana <- read_rds("./Tabelas/planos_de_saude_privado.rds") %>%
+  mutate(municipio = as.factor(municipio)) %>%
+  select(-cod_munici)
+
+# ...atlas brasil...
+atlas_brasil <- read_rds("./Tabelas/atlas_brasil_consulta.rds") %>%
+  mutate(municipio = as.factor(municipio)) %>%
+  select(-cod_munici)
+
+# The Union is done!
+base_parana <- inner_join(sf_parana, mamografos_parana, by = "municipio") %>% # o mapa + os eqptos de mamógrafos...
+               inner_join(., obitos_cancer, by = "municipio") %>%           # + ...os óbitos por câncer de mama...
+               inner_join(., planos_parana, by = "municipio") %>%           # + ...os planos de saúde...  
+               inner_join(., atlas_brasil, by = "municipio") %>%            # + ...o atlas_brasil...
+               select(cod_ibge, cod_munici, municipio, everything()) %>%
+
+               glimpse()
+
+#write_rds(base_parana, "./Tabelas/base_parana.rds")
+```
+
+# Criando taxas
+
+## Cálculo de taxas
+```{r message=FALSE, warning=FALSE}
+rm(list=ls())
+
+library(sf)
+library(tidyverse)
+library(scales)
+
+base_parana <- read_rds("./Tabelas/base_parana.rds")
+
+base_parana[is.na(base_parana)] <- 0
+
+taxas <- tibble(variavel = colnames(base_parana)) %>%
+  filter(str_detect(variavel, "mamografo|obitos_total_idade|plano")) %>%
+  as_vector()
+
+base_parana <- base_parana %>%
+  # criando mais algumas variáveis
+  mutate(area_km2              = round(unclass(st_area(.))[1:399]/1000000),
+         dens_demogr           = populacao_total_2010/area_km2,
+         prop_populacao_urbana = populacao_urbana_2010/populacao_total_2010,
+         populacao_mulheres    = as.integer(base_parana %>% st_set_geometry(NULL) %>%
+                                            select(30:44) %>% rowSums)) %>%
+  #definindo taxas
+  mutate_at(.funs = funs(taxa = (./populacao_mulheres)*1000), .vars = taxas)
+
+#write_rds(base_parana, "./Tabelas/base_parana.rds")
+```
+
+
+## Agrupamento por classificação do equipamento mamógrafo (opicional)
+
+Os mamógrafos são classificados por:
+
+* Existentes: Soma de todos os mamógrafos existentes na localidade  
+* Em uso: Subtrai os mamógrafos sem uso dos existentes
+* Disponível pelo SUS: mamógrafos utilizados na rede pública de saúde
+
+Para começar a análise, optamos pelo agrupamento dos dados nesas 3 categorias. A função `purrr::nest` faz esse trabalho aninhando uma base de dados para cada categoria.
+
+
+```{r}
+
+rm(list=ls())
+
+library(sf)
+library(tidyverse)
+library(readr)
+library(scales)
+
+(base_parana <- read_rds("./Tabelas/base_parana.rds") %>% 
+   gather(situacao, quantidade_mamografos,
+          -c(cod_ibge:municipio, obitos_20_a_29_anos:idhm_educacao_2010, geometry),
+          factor_key = T) %>%
+   group_by(situacao) %>%
+   nest())
+
+```
+
+
+
+
+
+
+
+
+
+***
+***
+***
+
+
+# Outras bases (não utilizadas)
+
+## População Residente - Total por município
+
+Descrição: Estimativas de 1992 a 2016 utilizadas pelo TCU para determinação das cotas do FPM (sem sexo e faixa etária)    
+
+Período: 2015  
+Fonte: [TABNET/Demográficas e Sócioeconômicas](http://www2.datasus.gov.br/DATASUS/index.php?area=0206&id=6943&VObj=http://tabnet.datasus.gov.br/cgi/deftohtm.exe?ibge/cnv/popt)
+
+```{r}
+library(abjutils)
+
+populacao_parana <- read_excel("./Tabelas/populacao_estimada_2015.xlsx") %>%
+ clean_names() %>%
+ set_names(rm_accent) %>%
+ arrange(municipio) %>%
+ mutate(cod_munici = str_sub(municipio, start = 1L, end = 6L),
+        munic      = str_sub(municipio, start = 8L)) %>%
+ mutate_if(is.character, funs(toupper)) %>%
+ select(-c(1))  %>%
+ rename(municipio = munic) %>%
+ select(cod_munici, municipio, everything()) %>%
+ glimpse()
+
+#write_rds(populacao_parana, "./Tabelas/populacao_estimada_2015.rds")
+```
+
+
+## População Residente - sexo Feminino por município
+
+Descrição: Estudo de Estimativas Populacionais por Município, Idade e Sexo 2000-2015 - Brasil População residente por Município e Faixa Etária 1  
+
+UF: Paraná  
+Sexo: Feminino  
+Período: 2015  
+Fonte: [2014 e 2015 – Estimativas preliminares elaboradas pelo Ministério da Saúde/SVS/CGIAE.](http://www2.datasus.gov.br/DATASUS/index.php?area=0206&id=6943&VObj=http://tabnet.datasus.gov.br/cgi/deftohtm.exe?ibge/cnv/popt)  
+
+
+```{r}
+pop_feminina <- read_excel("./Tabelas/populacao_feminina_2015.xlsx") %>%
+ clean_names() %>%
+ arrange(municipio) %>%
+ mutate(cod_munici = str_sub(municipio, start = 1L, end = 6L),
+        munic      = str_sub(municipio, start = 8L)) %>%
+ mutate_if(is.character, funs(toupper)) %>%
+ select(cod_munici,
+        munic,
+        x15_a_19_anos:x80_anos_e_mais) %>%
+ rename(municipio = munic) %>%
+ mutate(populacao_mulheres = rowSums(select(., x15_a_19_anos:x80_anos_e_mais))) %>%
+ select(-c(3:10)) %>%
+ select(cod_munici, municipio, everything()) %>%
+ glimpse()
+
+#readr::write_rds(pop_feminina, "./Tabelas/populacao_feminina_2015.rds")
+```
+
+
+

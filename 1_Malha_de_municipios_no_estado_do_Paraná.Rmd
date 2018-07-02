@@ -1,0 +1,59 @@
+---
+title: "Malha de municípios no estado do Paraná - BR"
+
+output:
+   github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Baixando os dados
+
+Primeiro, criamos uma pasta onde os arquivos serão salvos:
+```{r warning=FALSE, eval=FALSE}
+rm(list=ls())
+dir.create(  ".\\shp", showWarnings = FALSE)
+```
+
+Em seguida, montamos uma _url_ para _download_ dos arquivos do [IBGE](https://downloads.ibge.gov.br/downloads_geociencias.htm):
+```{r warning=FALSE}
+u_ibge <- paste0("ftp://geoftp.ibge.gov.br/organizacao_do_territorio/",
+                 "malhas_territoriais/malhas_municipais/",
+                 "municipio_2015/UFs/PR/pr_municipios.zip",
+           collapse = "")
+```
+
+Pega a _url_ do site e salva no diretório criado:
+```{r warning=FALSE, eval=FALSE}
+httr::GET(u_ibge,                              # lê a url
+         # httr::write_disk(".\\shp\\pr.zip")  # salva em disco
+          ) 
+
+# dezipa os arquivo com unzip()
+unzip(".\\shp\\pr.zip",
+      exdir = ".\\shp\\pr")
+```
+
+
+# Lendo o arquivo:
+
+Para ler esses arquivos num objeto do `R`, utilizamos a função `sf::st_read()`:
+```{r warning=FALSE, message=FALSE}
+library(tidyverse)
+library(sf)
+sf_municipio <- st_read("./shp/pr/41MUE250GC_SIR.shp", quiet = TRUE) %>% glimpse()
+```
+
+```{r fig.width=5, fig.height=5}
+library(ggplot2)
+   
+  ggplot(sf_municipio) +
+    geom_sf() +
+    ggtitle("Malha de municípios do Estado do Paraná (Brasil)") +
+    theme_minimal()
+```
+
+FIM!

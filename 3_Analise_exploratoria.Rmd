@@ -1,0 +1,240 @@
+---
+title: "Estatísticas descritivas: resumo das variáveis"
+output:
+    github_document:
+     toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tabela de estatísticas descritivas
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, fig.align='center', fig.height=3.5, fig.width=5}
+## taxas
+
+rm(list=ls())
+
+library(broom)
+library(sf)
+library(tidyverse)
+library(scales)
+
+aed_tab <- read_rds("./Tabelas/base_parana.rds") %>%
+  st_set_geometry(NULL) %>%
+  mutate(prop_populacao_urbana = (prop_populacao_urbana)*100) %>%
+  select(-seq(1:3)) %>%
+  # compute broom::tidy summary of each var
+  map(~tidy(summary(.x))) %>% 
+  do.call(rbind, . ) %>%  # VRAU!
+  # ajustando os números para um formáto publicável
+  transmute(
+     variavel = rownames(.),
+    `Mínimo`  = minimum, 
+     Q1       = q1,      
+     Mediana  = median,  
+     Q3       = q3,      
+    `Máximo`  = maximum, 
+    `Média`   = mean
+    )
+
+# vetor pivot
+aed_tab$`Variável` <- aed_tab$variavel
+
+
+# construindo um vetor com os nomes 'arrumados'
+variavel <- aed_tab$variavel[-c(4:11, 24:57)]  %>%
+  str_to_title() %>%
+  # e.g.: "idhm_2010" -> "idhm" 
+  str_replace_all("_2010", "") %>%
+  str_replace_all("_", " ") %>%
+  str_replace("aca", "aça") %>%
+  str_replace("nca", "nça") %>%
+  str_replace("çao", "ção") %>%
+  str_replace("Mamografos ", "Mamógrafos ") %>%
+  str_replace("\\ sus", "\\ SUS") %>%
+  str_replace("Obitos", "Óbitos") %>%
+  str_replace_all("População residente ", "População ") %>%
+  str_replace_all("saude", "saúde") %>%
+  str_replace_all("Indice de gini", "Índice de Gini") %>%
+  str_replace_all("per capita", "(pc)") %>%
+  str_replace_all("Idhm", "IDHM") %>%
+  str_replace_all(" do ", ": ") %>%
+  str_replace("Probabilidade de sobrevive", "Prob. de sobrevivê") %>%
+  str_replace("ate ", "até ") %>%
+  str_replace("Area km2", "Área $KM^2$")
+
+# variaveis em sequência de faiza etária
+obito <- c(paste("Óbitos (", seq(20, 75, by=10), "-", seq(29,79,by=10), ")", sep = ""),
+                 "Óbitos (80+)",
+                 "Óbitos tot. idade")
+
+pop_fem <- c(paste("Pop. feminina (", seq(0,75,by=5), "-", seq(4,79,by=5), ")", sep=""), "Pop. feminina (80+)")
+pop_msc <- c(paste("Pop. masculina (",seq(0,75,by=5), "-", seq(4,79,by=5), ")", sep=""), "Pop. masculina (80+)")
+
+aed_tab$`Variável`[-c(4:11, 24:57)] <- variavel
+aed_tab$`Variável`[4:11]  <- obito
+aed_tab$`Variável`[24:57] <- c(pop_fem, pop_msc)
+
+write_rds(aed_tab, "./Tabelas/aed_tab.rds")
+
+aed_tab %>%
+  select("Variável", c(2:7)) %>%
+  knitr::kable(digits=3)
+
+```
+
+
+# Código para 'traduzir' e renderizar uma tabela do `R` para o LaTeX
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, fig.align='center', eval=FALSE}
+
+library(kableExtra)
+
+aed_tab %>%
+  select("Variável", c(2:7)) %>%
+  slice(c(1:57,74)) %>%
+  mutate(`Média` = round(`Média`,1)) %>%
+  kable(format = "latex",
+       # align = 'c',
+        format.args = list(decimal.mark=",", big.mark=".", scientific=FALSE),
+        booktabs = T,
+        longtable = T,
+        caption = "Resumo das Variáveis - discretas",
+        digit=0,
+        escape = FALSE,
+        linesep = "") %>%
+  kable_styling(latex_options = c("striped", "repeat_header", "scale_down"))
+
+aed_tab %>%
+  select("Variável", c(2:7)) %>%
+  slice(-c(1:57, 74)) %>%
+  mutate(`Média` = round(`Média`,3)) %>%
+    kable(format = "latex",
+          digits = 3,
+        #align = 'c',
+        format.args = list(decimal.mark=",", big.mark=".", scientific=FALSE),
+        booktabs = T,
+        longtable = T,
+        caption = "Resumo das Variáveis - contínuas",
+        escape = FALSE,
+        linesep = "") %>%
+ kable_styling(latex_options = c("striped", "repeat_header", "scale_down"))
+```
+
+
+# Mapas
+
+Dados:
+
+```{r}
+
+rm(list=ls())
+
+library(broom)
+library(sf)
+library(tidyverse)
+library(scales)
+
+(base_parana <- read_rds("./Tabelas/base_parana.rds") %>%
+    gather(situacao, taxa_de_mamografos,
+          -c(cod_ibge:populacao_mulheres,
+             obitos_total_idade_taxa:geometry),
+          factor_key = T) %>%
+   group_by(situacao) %>%
+   nest())
+
+```
+
+
+```{r warning=FALSE, message=FALSE}
+
+zeros <- base_parana$data %>%
+  map(~ifelse(.x$taxa_de_mamografos>0, "não zero", "zero"))
+
+base_parana$data <- map2(base_parana$data,
+                         zeros,
+                         ~mutate(.x, non_zero = .y))
+
+com_mamogr <- base_parana$data %>%
+  map(~st_set_geometry(.x, NULL)) %>%
+  map(~filter(.x, non_zero=="não zero")) %>%
+  map(~select(.x, municipio, mamografos_existentes, mamografos_sus, mamografos_em_uso))
+
+
+
+
+
+#--
+no_classes <- 6
+quantiles <- com_mamogr %>%
+  map(~{quantile(.$taxa_de_mamografos, probs = seq(0, 1, length.out = no_classes + 1))})
+#--
+
+titulos <- c("Existentes", "Em uso", "Disponíveis pelo SUS")
+
+# gera os gráficos
+mapas <- map2(base_parana$data, titulos, ~{
+               ggplot(.x, aes(fill = ifelse(non_zero == "não zero", taxa_de_mamografos, NA))) +  # cria o ggplot
+                geom_sf() +                    # desenha o mapa
+                ggtitle(.y) +                  # adiciona o título
+                theme(plot.title  = element_text(size = 12, hjust =.5),
+                      axis.text.x = element_blank(),
+                      axis.text.y = element_blank(),
+                      axis.line.x = element_blank(),
+                      axis.line.y = element_blank(),
+                      panel.background = element_blank(),
+                      panel.grid       = element_blank(),
+                      panel.grid.major = element_line(colour = "white"),
+                      axis.title.x = element_blank(),
+                      axis.title.y = element_blank(),
+                      axis.ticks   = element_blank(),
+                      legend.position = "bottom") +
+                # this is the main part
+                scale_fill_viridis_c(option    = "magma",
+                                     direction = -1,
+                                     name      = "Taxa de mamógrafos por 1000 mulheres",
+                                     # here we use guide_colourbar because it is still a continuous scale
+                                     guide     = guide_colorbar(direction = "horizontal",
+                                                                barheight = unit( 2, units = "mm"),
+                                                                barwidth  = unit(50, units = "mm"),
+                                                                draw.ulim = F,
+                                                                title.position = 'top',
+                                                                title.hjust = 0.5,
+                                                                label.hjust = 0.5))
+               
+            })
+
+
+```
+
+
+
+
+
+
+
+
+
+Utilizamos o `ggpubr::ggarrange` para enquadrar as localidades.
+
+```{r warning=FALSE, message=FALSE, fig.height=8, fig.width=10}
+library(ggpubr)
+mapas <- ggarrange(mapas[[1]], mapas[[2]], mapas[[3]],
+                   ncol   = 2,
+                   nrow   = 2,
+                   align  = "hv",
+                   legend = "bottom", 
+                   common.legend = TRUE) %>%
+  annotate_figure(.,
+                 top = text_grob("Taxas de mamógrafos por 1000 Mulheres - Municípios do estado Paraná",
+                                 color  = "black",
+                                 vjust  = .5,
+                                 size   = 14,
+                                 family = "Times",
+                                 just   = "center"))
+
+mapas
+```
+

@@ -31,13 +31,19 @@ Abaixo uma breve descrição da base de dados utilizada:
 - **Malha de municípios do Estado do Paraná** - Período: 2015 - Fonte: [IBGE - Malha Municipal 2015](https://goo.gl/Dprczu)
 
 ## _Workflow_
-
+O esquema de trabalho é feito com base no ciclo de Wickham (2016):
 ![](https://github.com/rdurl0/economia_da_saude/blob/master/r4ds.png)
 
-###
+### _Import/tidy_
 - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/1_Malha_de_municipios_no_estado_do_Paran%C3%A1.md) é carregada a malha de municípios do estado do Paraná. O arquivo _shapefile_ é baixado e deixado em condições para unir com outras bases de dados;
+
 - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/2_Bases_de_dados.md) são baixadas as bases de dados, "limpamos" e unimos as bases ao _shapefile_ para deixar tudo em condições de análise;
 
+### _Transform/Model/Visualize_
 - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/3_Analise_exploratoria.md): edição básica de gráficos e tabelas para exibição em relatório laTeX
 
-##
+### _Communicate_
+- [Neste link]() o artigo é apresentado. A versão final do artigo é disponibilizada neste [pdf]().
+
+## Referencias Bibliográficas
+WICKHAM, Hadley; GROLEMUND, Garrett. R for data science: import, tidy, transform, visualize, and model data. " O'Reilly Media, Inc.", 2016.

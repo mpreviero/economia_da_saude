@@ -31,7 +31,13 @@ Abaixo uma breve descrição da base de dados utilizada:
 - **Malha de municípios do Estado do Paraná** - Período: 2015 - Fonte: [IBGE - Malha Municipal 2015](https://goo.gl/Dprczu)
 
 ## _Workflow_
-- [Malha de Munícipios no Estado do Paraná](https://github.com/rdurl0/economia_da_saude/blob/master/1_Malha_de_municipios_no_estado_do_Paran%C3%A1.md)
-- [Unindo bases: Dados (DATASUS) e _shapefile_](https://github.com/rdurl0/economia_da_saude/blob/master/2_Bases_de_dados.md)
-- [Tabelas de estatísticas descritivas e mapas](https://github.com/rdurl0/economia_da_saude/blob/master/3_Analise_exploratoria.md): edição básica para laTeX 
 
+![]()
+
+###
+- [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/1_Malha_de_municipios_no_estado_do_Paran%C3%A1.md) é carregada a malha de municípios do estado do Paraná. O arquivo _shapefile_ é baixado e deixado em condições para unir com outras bases de dados;
+- [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/2_Bases_de_dados.md) são baixadas as bases de dados, "limpamos" e unimos as bases ao _shapefile_ para deixar tudo em condições de análise;
+
+- [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/3_Analise_exploratoria.md): edição básica de gráficos e tabelas para exibição em relatório laTeX
+
+##

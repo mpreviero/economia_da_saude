@@ -32,6 +32,7 @@ Abaixo uma breve descrição da base de dados utilizada:
 
 ## _Workflow_
 O esquema de trabalho é feito com base no ciclo de Wickham (2016):
+
 ![](https://github.com/rdurl0/economia_da_saude/blob/master/r4ds.png)
 
 ### _Import/tidy_

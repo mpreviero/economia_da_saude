@@ -32,7 +32,7 @@ Abaixo uma breve descrição da base de dados utilizada:
 
 ## _Workflow_
 
-![]()
+![](https://github.com/rdurl0/economia_da_saude/blob/master/r4ds.png)
 
 ###
 - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/1_Malha_de_municipios_no_estado_do_Paran%C3%A1.md) é carregada a malha de municípios do estado do Paraná. O arquivo _shapefile_ é baixado e deixado em condições para unir com outras bases de dados;

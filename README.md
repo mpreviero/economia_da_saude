@@ -9,7 +9,8 @@ Tópicos em economia da saúde: distribuição espacial dos equipamentos de mamo
 
 Abaixo uma breve descrição da base de dados utilizada:
 
-### [Tabelas](https://github.com/rdurl0/economia_da_saude/tree/master/Tabelas)
+### Tabelas
+[_Download_ das tabelas](https://github.com/rdurl0/economia_da_saude/tree/master/Tabelas)
 - **Equipamentos de mamografia**:
   - _Número de mamógrafos existentes, em uso e disponíveis pelo SUS_ - Período: maio/2010 - Fonte: [TABNET/CNES](http://www2.datasus.gov.br/DATASUS/index.php?area=0204&id=11671&VObj=http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/equipo).
 - **Morte por câncer de mama**:
@@ -41,7 +42,7 @@ O esquema de trabalho é feito com base no ciclo de Wickham (2016):
 - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/2_Bases_de_dados.md) são baixadas as bases de dados, "limpamos" e unimos as bases ao _shapefile_ para deixar tudo em condições de análise;
 
 ### _Transform/Model/Visualize_
-- Análise exploratória de dados:
+- **Análise exploratória de dados**:
     - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/3_Analise_exploratoria.md): edição básica de gráficos e tabelas para exibição em relatório laTeX de estatísticas descritivas
     - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/4_Autocorrelacao_espacial.md): verificamos autocorrelação espacial das variáveis
     

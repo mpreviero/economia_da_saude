@@ -178,6 +178,7 @@ Cálculo do Índice de Moran
 library(broom)
 
 (base_parana <- base_parana %>% 
+    
       mutate(moran_queen   = map(base_parana$lags, ~lm(queen ~ taxa, data = .x)) %>% map(tidy), 
              moran_rook    = map(base_parana$lags, ~lm(rook ~ taxa, data = .x)) %>% map(tidy),
              moran_knear5  = map(base_parana$lags, ~lm(knear5 ~ taxa, data = .x))  %>% map(tidy),
@@ -186,8 +187,8 @@ library(broom)
              moran_knear8  = map(base_parana$lags, ~lm(knear8 ~ taxa, data = .x)) %>% map(tidy),
              moran_knear9  = map(base_parana$lags, ~lm(knear9 ~ taxa, data = .x)) %>% map(tidy),
              moran_knear10 = map(base_parana$lags, ~lm(knear10 ~ taxa, data = .x)) %>% map(tidy)
-              )
-)
+             
+              ))
 ```
 
     ## # A tibble: 16 x 11
@@ -256,7 +257,7 @@ library(ggpubr)
 queen <- base_parana$lags %>% 
    map2(.x = .,c(rep("queen", 16)), ~{plot_my_data(.x, .y)}) %>% 
    map2(., titulos, ~{.x + ggtitle(.y)}) %>%
-   map2(., base_parana$moran_queen, ~{.x + geom_abline(slope     = .y$estimate[[1]],
+   map2(., base_parana$moran_queen, ~{.x + geom_abline(slope = .y$estimate[[1]],
                                                        intercept = .y$estimate[[2]],
                                                        size = .5, linetype = 'dashed')}) #%>%
 #   map(. , ~{ggarrange(.x, ncol = 3, nrow   = 1, align  = "hv")})
@@ -264,9 +265,9 @@ queen <- base_parana$lags %>%
 
 
 
-ggarrange(queen[[1]], queen[[2]], queen[[3]], queen[[4]],
-          queen[[1]], queen[[2]], queen[[7]], queen[[8]],
-          queen[[9]], queen[[10]], queen[[11]], queen[[12]],
+ggarrange(queen[[1]],  queen[[2]],  queen[[3]],  queen[[4]],
+          queen[[1]],  queen[[2]],  queen[[7]],  queen[[8]],
+          queen[[9]],  queen[[10]], queen[[11]], queen[[12]],
           queen[[12]], queen[[14]], queen[[15]], queen[[16]],
           ncol   = 4,
           nrow   = 4,
@@ -295,9 +296,9 @@ rook <- base_parana$lags %>%
                                                       size = .5, linetype = 'dashed')}) #%>%
 #   map(. , ~{ggarrange(.x, ncol = 3, nrow   = 1, align  = "hv")})
 
-ggarrange(rook[[1]], rook[[2]], rook[[3]], rook[[4]],
-          rook[[5]], rook[[6]], rook[[7]], rook[[8]],
-          rook[[9]], rook[[10]], rook[[11]], rook[[12]],
+ggarrange(rook[[1]],  rook[[2]],  rook[[3]],  rook[[4]],
+          rook[[5]],  rook[[6]],  rook[[7]],  rook[[8]],
+          rook[[9]],  rook[[10]], rook[[11]], rook[[12]],
           rook[[13]], rook[[14]], rook[[15]], rook[[16]],
           ncol   = 4,
           nrow   = 4,
@@ -313,14 +314,28 @@ ggarrange(rook[[1]], rook[[2]], rook[[3]], rook[[4]],
                                   just   = "center"))
 ```
 
+![](4_Autocorrelacao_espacial_files/figure-markdown_github/unnamed-chunk-9-1.png)
+
 ### 5 Vizinhos mais próximos
+
+![](4_Autocorrelacao_espacial_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 ### 6 vizinhos mais próximos
 
+![](4_Autocorrelacao_espacial_files/figure-markdown_github/unnamed-chunk-11-1.png)
+
 ### 7 vizinhos mais próximos
+
+![](4_Autocorrelacao_espacial_files/figure-markdown_github/unnamed-chunk-12-1.png)
 
 ### 8 vizinhos mais próximos
 
+![](4_Autocorrelacao_espacial_files/figure-markdown_github/unnamed-chunk-13-1.png)
+
 ### 9 vizinhos mais próximos
 
+![](4_Autocorrelacao_espacial_files/figure-markdown_github/unnamed-chunk-14-1.png)
+
 ### 10 vizinhos mais próximos
+
+![](4_Autocorrelacao_espacial_files/figure-markdown_github/unnamed-chunk-15-1.png)

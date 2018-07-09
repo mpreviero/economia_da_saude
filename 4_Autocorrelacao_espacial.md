@@ -62,7 +62,17 @@ lista_w <- list(w_queen = nb2listw(poly2nb(sp_parana, queen = T), style = "W"),
 \[FIX\] Microrregião de saúde:
 ------------------------------
 
+``` r
+print("Inserir matriz de micorregioes de saúde")
+```
+
     ## [1] "Inserir matriz de micorregioes de saúde"
+
+``` r
+library(spdep)
+micro <- read.gal("./shp/w/micro.gal", override.id = TRUE)
+summary(micro)
+```
 
     ## Neighbour list object:
     ## Number of regions: 5570 

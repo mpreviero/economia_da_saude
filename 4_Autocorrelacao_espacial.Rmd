@@ -50,7 +50,7 @@ lista_w <- list(w_queen = nb2listw(poly2nb(sp_parana, queen = T), style = "W"),
 
 ## [FIX] Microrregião de saúde:
 
-```{r echo=FALSE}
+```{r}
 print("Inserir matriz de micorregioes de saúde")
 
 library(spdep)

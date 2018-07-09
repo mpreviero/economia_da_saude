@@ -64,6 +64,24 @@ lista_w <- list(w_queen = nb2listw(poly2nb(sp_parana, queen = T), style = "W"),
 
     ## [1] "Inserir matriz de micorregioes de saúde"
 
+    ## Neighbour list object:
+    ## Number of regions: 5570 
+    ## Number of nonzero links: 86136 
+    ## Percentage nonzero weights: 0.2776351 
+    ## Average number of links: 15.46427 
+    ## 2 regions with no links:
+    ## 355030 530010
+    ## Link number distribution:
+    ## 
+    ##   0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17 
+    ##   2   2  21  56 145 174 196 256 279 230 330 288 325 294 285 144 221 306 
+    ##  18  19  20  21  22  23  24  25  26  27  28  29  30  31  32  33  36  41 
+    ## 190 240 210 176 115 168 175 130 108 140  29  60  31  32  99  34  37  42 
+    ## 2 least connected regions:
+    ## 500320 500520 with 1 link
+    ## 42 most connected regions:
+    ## 220005 220025 220027 220095 220157 220173 220180 220209 220213 220255 220327 220340 220415 220420 220430 220435 220480 220500 220515 220520 220595 220605 220650 220720 220755 220777 220780 220800 220820 220865 220910 220935 220940 220985 221020 221030 221037 221070 221093 221150 221160 221170 with 41 links
+
 Vizualizando contiguidade:
 --------------------------
 

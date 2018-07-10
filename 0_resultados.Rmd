@@ -1,8 +1,9 @@
 ---
 title: "Tópicos em economia da saúde: distribuição espacial dos equipamentos de mamografia no estado do Paraná e casos de óbito de mulheres por neoplasia malígna mamal."
-abstract: "Este projeto tem como objetivo analisar a disponibilidade de equipamentos de mamografia no estado do Paraná e sua relação com as condições de saúde e socieconômica da população feminina acima dos 15 anos de idade. O principal resultado obtido até o momento demonstra que maiores taxas de óbitos por câncer de mama nos municípios se associam com a falta de equipamentos (e consequentemente de uma rede de atendimento). Para obtenção deste resultado foram calculadas estatísticas descritivas demográficas, de disponibilidade de equipamento e de taxas de óbitos por câncer de mama. Também foi estimado um modelo _Probit_ que associa maiores taxas de óbito por cânce à ausência de equipamento de mamografia"
-author: "Raul de Sá Durlo"
 
+abstract: "Este projeto tem como objetivo analisar a disponibilidade de equipamentos de mamografia no estado do Paraná e sua relação com as condições de saúde e socieconômica da população feminina acima dos 15 anos de idade. O principal resultado obtido até o momento demonstra que maiores taxas de óbitos por câncer de mama nos municípios se associam com a falta de equipamentos (e consequentemente de uma rede de atendimento). Para obtenção deste resultado foram calculadas estatísticas descritivas demográficas, de disponibilidade de equipamento e de taxas de óbitos por câncer de mama. Também foi estimado um modelo _Probit_ que associa maiores taxas de óbito por cânce à ausência de equipamento de mamografia"
+
+author: "Raul de Sá Durlo"
 
 header-includes:
 - \usepackage{booktabs}
@@ -42,7 +43,8 @@ knitr::opts_chunk$set(echo = TRUE)
 # a tabela abaixo é gerada no arquivo "3_Analise_esploratoria.rmd"
 ```
 
-| A tabela abaixo apresenta um resumo dos dados populacionais no estado do Paraná para o ano de 2010. Foram calculadas as estatísticas descritivas para a população residente total, suas proporções e total de residentes em áreas urbanas e rurais, densidade demográfica, e gênero masculino e feminino sendo que para este último também é apresentado a população feminina de 15 anos e mais.
+
+A tabela abaixo apresenta um resumo dos dados populacionais no estado do Paraná para o ano de 2010. Foram calculadas as estatísticas descritivas para a população residente total, suas proporções e total de residentes em áreas urbanas e rurais, densidade demográfica, e gênero masculino e feminino sendo que para este último também é apresentado a população feminina de 15 anos e mais.
 
 \rowcolors{2}{gray!6}{white}
 \begin{table}[!h]

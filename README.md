@@ -45,10 +45,14 @@ O esquema de trabalho é feito com base no ciclo de Wickham (2016):
 - **Análise exploratória de dados**:
     - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/3_Analise_exploratoria.md): edição básica de gráficos e tabelas para exibição em relatório laTeX de estatísticas descritivas
     - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/4_Autocorrelacao_espacial.md): verificamos autocorrelação espacial das variáveis
+<<<<<<< HEAD
     - [Neste link](): estimamos um modelo _Probit_ verificando a probabilidade de morte por cancer de mama dado que um município tem (ou não) equipamento de mamografia a disposição.
+=======
+    - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/5_Modelo_probit.md): estimamos um modelo _Probit_ verificando a probabilidade de morte por cancer de mama dado que um município tem (ou não) equipamento de mamografia a disposição.
+>>>>>>> 477f270660f8c77b68340a6b4895196f5e60e634
     
 ### _Communicate_
-- [Neste link]() o artigo é apresentado. A versão final do artigo é disponibilizada neste [pdf]().
+- [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/0_resultados.Rmd) o artigo é apresentado (em extensão `.Rmd`). A versão final do artigo é [disponibilizada neste pdf](https://github.com/rdurl0/economia_da_saude/blob/master/0_resultados.pdf).
 
 ## Referencias Bibliográficas
 WICKHAM, Hadley; GROLEMUND, Garrett. R for data science: import, tidy, transform, visualize, and model data. " O'Reilly Media, Inc.", 2016.

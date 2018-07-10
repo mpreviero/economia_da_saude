@@ -45,6 +45,7 @@ O esquema de trabalho é feito com base no ciclo de Wickham (2016):
 - **Análise exploratória de dados**:
     - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/3_Analise_exploratoria.md): edição básica de gráficos e tabelas para exibição em relatório laTeX de estatísticas descritivas
     - [Neste link](https://github.com/rdurl0/economia_da_saude/blob/master/4_Autocorrelacao_espacial.md): verificamos autocorrelação espacial das variáveis
+    - [Neste link](): estimamos um modelo _Probit_ verificando a probabilidade de morte por cancer de mama dado que um município tem (ou não) equipamento de mamografia a disposição.
     
 ### _Communicate_
 - [Neste link]() o artigo é apresentado. A versão final do artigo é disponibilizada neste [pdf]().

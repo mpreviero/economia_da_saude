@@ -9,6 +9,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 # Tabela de estatísticas descritivas
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.align='center', fig.height=3.5, fig.width=5}
@@ -88,6 +89,8 @@ aed_tab %>%
 
 # Código para 'traduzir' e renderizar uma tabela do `R` para o LaTeX
 
+## Um exemplo
+
 ```{r echo=TRUE, message=FALSE, warning=FALSE, fig.align='center', eval=FALSE}
 
 library(kableExtra)
@@ -123,6 +126,183 @@ aed_tab %>%
  kable_styling(latex_options = c("striped", "repeat_header", "scale_down"))
 ```
 
+## População e Território no estado do Paraná
+
+O código abaixo gera uma tabela em LaTeX e seu resultado é copiado para o arquivo `0_resultados.Rmd`:
+
+```{r warning=FALSE, message=FALSE}
+
+
+
+# é melhor copiar o output e colocar inline com a linguagem TEX
+library(tidyverse)
+library(readr)
+library(kableExtra)
+library(sf)
+
+total <- read_rds("./Tabelas/base_parana.rds") %>%
+  st_set_geometry(NULL) %>%
+  group_by() %>%
+  summarise(sum(populacao_total_2010),
+            sum(populacao_rural_2010),
+            sum(populacao_urbana_2010),
+            sum(area_km2),
+            sum(populacao_residente_masculina_2010),
+            sum(populacao_residente_feminina_2010),
+            sum(populacao_mulheres)) %>%
+  mutate(dens = `sum(populacao_total_2010)`/`sum(area_km2)`,
+         perc = round((`sum(populacao_urbana_2010)`/`sum(populacao_total_2010)`)*100)) %>%
+  gather(value=Total) %>%
+  mutate(index=c(1, 2, 3, 99, 6, 7, 8, 5, 4)) %>%
+  arrange(index) %>%
+  select(-key) %>%
+  filter(index != 99)
+
+
+read_rds("./Tabelas/aed_tab.rds") %>% 
+  filter(str_detect(`Variável`, "opulação|Dens")) %>%
+  
+  mutate(index = c(1,2,3,6,7,5,4,8),
+        `População Residente` = c("População Residente", #1
+                                  "Pop. Rural",               #3
+                                  "Pop. Urbana",              #4
+                                  "Pop. Masculina",           #6
+                                  "Pop. Feminina",            #7
+                                  "Dens. Demográfica",        #2
+                                  "Pop. Urbana (perc.)",      #5
+                                  "Pop. Feminina ($15+$ anos)"#8
+                                   )) %>%
+  arrange(index) %>%
+  select(9,2:7) %>%
+  mutate(Total = total$Total) %>%
+  kable(format = "latex",
+        format.args = list(decimal.mark=",", big.mark=".", scientific=FALSE),
+        booktabs  = T,
+        digits    = 0,
+        caption   = "Resumo - dados demográficos (2010)",
+        escape    = FALSE) %>%
+  kable_styling(latex_options = c("striped", "repeat_header", "scale_down", "hold_position")) %>%
+  row_spec(1, bold = T) %>%
+  group_rows("Território", 2,5) %>%
+  group_rows("Gênero", 6,8)
+  
+```
+
+## Neoplasia (câncer) maligna da mama, equipamentos e serviço de saúde.
+
+O código abaixo gera uma tabela em LaTeX e seu resultado é copiado para o arquivo `0_resultados.Rmd`:
+
+```{r warning=FALSE, message=FALSE, fig.align='center'}
+
+library(kableExtra)
+
+base_parana <- read_rds("./Tabelas/base_parana.rds") %>%
+  filter(mamografos_existentes > 0) %>%
+  mutate(mamografos_nao_sus = mamografos_existentes - mamografos_sus,
+         municipio = as.character(municipio))
+
+variav <- c( "Existentes",
+             "Em uso",
+             "Existentes e . pelo SUS",
+             "Óbitos por câncer de mama\n(por 1.000 mulheres)",
+             "N° de beneficiárias de planos de saúde privado\n(por 1.000 mulheres)")
+
+zeros <- base_parana %>%
+  st_set_geometry(NULL) %>%
+  group_by() %>%
+  summarise(sum(mamografos_existentes_taxa==0)/399,
+            sum(mamografos_em_uso_taxa==0)/399,
+            sum(mamografos_sus_taxa==0)/399,
+            sum(obitos_total_idade_taxa==0)/399,
+            sum(planos_saude_taxa==0)/399) %>%
+  gather(value=zeros) %>%
+  select(-key) %>%
+  as_vector()
+
+
+aed_tab %>%
+  filter(str_detect(variavel, '_taxa')) %>%
+  mutate(Indicador = variav,
+         zeros     = paste(round(zeros*100,1), "\\%", sep="")) %>%
+  select(9, 2:7, 10) %>%
+  mutate_all(linebreak) %>%
+  kable(format = "latex",
+        format.args = list(decimal.mark=",", big.mark=".", scientific=FALSE),
+        booktabs = T,
+        digits   = 3,
+        caption  = "Resumo - Indicadores de Saúde Pública",
+        escape   = FALSE,
+        linesep  = "") %>%
+  kable_styling(latex_options = c("striped", "repeat_header", "scale_down", "hold_position"),
+                font_size = 7) %>%
+  group_rows("Equipamentos de mamografia\n(por 1.000 mulheres)", 1,3) %>%  
+  group_rows("", 4,4) %>%
+  group_rows("", 5,5)
+ 
+```
+
+## Equipamentos de Mamografia nos municípios
+
+```{r eval=FALSE, echo=FALSE}
+rm(list=ls())
+
+library(kableExtra)
+library(readr)
+library(tidyverse)
+library(sf)
+
+diff(1:10, 2)
+
+total <- function(x) {
+  read_rds("./Tabelas/base_parana.rds") %>%
+  st_set_geometry(NULL) %>%
+  filter(x>0) %>%
+  select(municipio, starts_with("mamogr"), -ends_with("_taxa")) %>%
+  group_by()%>%
+  summarise(mamografos_existentes=sum(mamografos_existentes),
+            mamografos_sus=sum(mamografos_sus),
+            mamografos_em_uso=sum(mamografos_em_uso)) %>%
+  mutate(mamografos_existentes_taxa=NA,
+         mamografos_sus_taxa=NA,
+         mamografos_em_uso_taxa=NA,
+         municipio= as.factor("TOTAL")) %>%
+  select(municipio, everything())
+}
+
+
+checklist <- total('mamografos_em_uso') %>%
+  bind_rows(., total('mamografos_sus')) %>%
+  bind_rows(., total('mamografos_existentes')) %>%
+  select(-municipio, -ends_with("_taxa")) %>%
+  kable()
+
+
+read_rds("./Tabelas/base_parana.rds") %>%
+  st_set_geometry(NULL) %>%
+  filter(mamografos_existentes>0) %>%
+  select( #ordena coluna
+    municipio,
+    mamografos_existentes,
+    mamografos_sus,
+    mamografos_em_uso,
+    mamografos_existentes_taxa,
+    mamografos_sus_taxa,
+    mamografos_em_uso_taxa
+    ) %>%
+  arrange(desc(mamografos_sus_taxa)) %>%
+  bind_rows(total('mamografos_em_uso')) %>%
+   kable(format = "latex",
+        format.args = list(decimal.mark=",", big.mark=".", scientific=FALSE),
+        booktabs  = T,
+        digits    = 3,
+        caption   = "Resumo - Equipamentos de mamografia",
+        escape    = F,
+        align     = c('l','c','c','c','c','c','c'),
+        linesep = "") %>%
+  kable_styling(latex_options = c("striped", "repeat_header", "scale_down", "hold_position"),
+                font_size = 7) %>%
+  add_header_above(c(" " = 1,  "Números Absolutos" = 3, "Taxas por 1.000 Mulheres" = 3), bold=T)
+```
 
 # Mapas
 
@@ -236,5 +416,88 @@ mapas <- ggarrange(mapas[[1]], mapas[[2]], mapas[[3]],
                                  just   = "center"))
 
 mapas
+```
+
+# Outros gráficos
+
+
+```{r warning=FALSE, message=FALSE, fig.align='center', echo=TRUE, fig.height=2.5, fig.width=4}
+rm(list=ls())
+
+library(readr)
+library(tidyverse)
+library(sf)
+library(scales)
+
+# HISTOGRAMA AREA Km^2
+base_parana <- read_rds("./Tabelas/base_parana.rds")
+
+base_parana %>%
+ggplot(aes(x = log10(area_km2))) +
+  geom_histogram(colour = "black", fill = NA, size = .2) +
+  # as lihas média e mediana
+  geom_vline(aes(xintercept = mean(log10(area_km2)),   color = "Média"  ), linetype = "dashed", size=.5) +
+  geom_vline(aes(xintercept = median(log10(area_km2)), color = "Mediana"), linetype = "dashed", size=.5) +
+  scale_color_manual(name = "", values = c("blue","red")) +
+  # scale_x_continuous(labels = comma, breaks = seq(0, max(base_parana$area_km2), by=500000)) +
+  # quadro-resumo
+  geom_label(label=expression(atop("Área total: 199.307.988 " ~ Km^{2}, "n: 399")),
+             x=3.2, y=33, parse=TRUE, size=2.2, label.size=.2) +
+  # formatação básica
+  labs(title = "Distribuição da área dos municípios do estado do Paraná",
+       x = expression(log[10](Km^{2})),
+       y = "Frequência") +
+  theme(plot.title       = element_text(size=9, hjust = .35),
+        plot.subtitle    = element_text(hjust = .5),
+        legend.position  = c(.8,.6),
+        legend.title     = element_blank(),
+        legend.background= element_rect(line='solid', color='white', size=.2),
+        legend.key.size  = unit(.2, "cm"),
+        axis.ticks       = element_line(),
+        legend.text      = element_text(size=7),
+        axis.text.x      = element_text(size=7),
+        axis.text.y      = element_text(size=7),
+        axis.line.x      = element_line(),
+        axis.line.y      = element_line(),
+        panel.background = element_blank(),
+        axis.title.x     = element_text(size=7),
+        axis.title.y     = element_text(size=7))
+```
+
+
+```{r warning=FALSE, message=FALSE, fig.align='center', echo=TRUE, fig.height=4, fig.width=4}
+rm(list=ls())
+
+library(tidyverse)
+require(sf)
+library(readr)
+
+mamografos <- read_rds("./Tabelas/base_parana.rds") %>%
+  st_set_geometry(NULL) %>% 
+  select(mamografos_existentes_taxa, mamografos_sus_taxa, mamografos_em_uso_taxa) %>%
+  gather() %>%
+  filter(value>0) %>%
+  mutate(key = as.factor(key))
+
+levels(mamografos$key) <- c("Em uso", "Existentes", "Disp. pelo SUS")
+
+
+
+mamografos %>%
+  ggplot(aes(y=log(value), x=1)) +
+    geom_boxplot() +
+    labs(title = "Distribuição dos Equipamentos de Mamografia nos municípios do estado do Paraná",
+         subtitle="Logarítmo natural da taxa por 1.000 mulheres (20 anos e mais)",
+         y = "Taxa",
+         caption = "Exceto municípios sem equipamento de mamografia")+
+    theme(plot.title = element_text(size=7),
+          plot.subtitle = element_text(size=6),
+          plot.caption = element_text(size=5),
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank(),
+          axis.title.y = element_text(size=6),
+          axis.ticks.x = element_blank(),
+          strip.text = element_text(size=5)) +
+    facet_wrap(key ~ .)
 ```
 

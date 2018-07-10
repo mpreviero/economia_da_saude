@@ -1,0 +1,505 @@
+---
+title: "Tópicos em economia da saúde: distribuição espacial dos equipamentos de mamografia no estado do Paraná e casos de óbito de mulheres por neoplasia malígna mamal."
+abstract: "Este projeto tem como objetivo analisar a disponibilidade de equipamentos de mamografia no estado do Paraná e sua relação com as condições de saúde e socieconômica da população feminina acima dos 15 anos de idade. O principal resultado obtido até o momento demonstra que maiores taxas de óbitos por câncer de mama nos municípios se associam com a falta de equipamentos (e consequentemente de uma rede de atendimento). Para obtenção deste resultado foram calculadas estatísticas descritivas demográficas, de disponibilidade de equipamento e de taxas de óbitos por câncer de mama. Também foi estimado um modelo _Probit_ que associa maiores taxas de óbito por cânce à ausência de equipamento de mamografia"
+author: "Raul de Sá Durlo"
+
+
+header-includes:
+- \usepackage{booktabs}
+- \usepackage{longtable}
+- \usepackage{array}
+- \usepackage{multirow}
+- \usepackage[table]{xcolor}
+- \usepackage{wrapfig}
+- \usepackage{float}
+- \usepackage{colortbl}
+- \usepackage{pdflscape}
+- \usepackage{tabu}
+- \usepackage{threeparttable}
+- \usepackage{threeparttablex}
+- \usepackage[normalem]{ulem}
+- \usepackage{makecell}
+
+output:
+  pdf_document:
+    latex_engine: xelatex
+    number_sections: true
+    fig_caption: yes
+    keep_tex: false
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+
+
+# População e Território no estado do Paraná
+
+```{r echo=FALSE, eval=FALSE}
+# a tabela abaixo é gerada no arquivo "3_Analise_esploratoria.rmd"
+```
+
+| A tabela abaixo apresenta um resumo dos dados populacionais no estado do Paraná para o ano de 2010. Foram calculadas as estatísticas descritivas para a população residente total, suas proporções e total de residentes em áreas urbanas e rurais, densidade demográfica, e gênero masculino e feminino sendo que para este último também é apresentado a população feminina de 15 anos e mais.
+
+\rowcolors{2}{gray!6}{white}
+\begin{table}[!h]
+
+\caption{\label{tab:}Resumo - dados demográficos (2010)}
+\centering
+\resizebox{\linewidth}{!}{\fontsize{6}{8}\selectfont\begin{tabular}[t]{lrrrrrrr}
+\hiderowcolors
+\toprule
+ & Mínimo & Q1 & Mediana & Q3 & Máximo & Média & Total\\
+\midrule
+\showrowcolors
+\textbf{População Residente} & \textbf{1.409} & \textbf{5.037} & \textbf{9.026} & \textbf{17.274} & \textbf{1.751.907} & \textbf{26.177} & \textbf{10.444.526}\\
+\addlinespace[0.3em]
+\multicolumn{8}{l}{\textbf{Território}}\\
+\hspace{1em}\textit{Pop. Rural} & 0 & 1.444 & 2.571 & 4.581 & 47.469 & 3.839 & 1.531.834\\
+\hspace{1em}\textit{Pop. Urbana} & 524 & 2.906 & 5.732 & 12.770 & 1.751.907 & 22.338 & 8.912.692\\
+\hspace{1em}\textit{Pop. Urbana (\%)} & \textit{9\%} & \textit{55\%} & \textit{72\%} & \textit{84\%} & \textit{100\%} & \textit{68\%} & \textit{85\%}\\
+\hspace{1em}\textit{Dens. Demográfica ($Km^{2}$)} & 3 & 17 & 25 & 38 & 4.027 & 62 & 52\\
+\addlinespace[0.3em]
+\multicolumn{8}{l}{\textbf{Gênero}}\\
+\hspace{1em}\textit{Pop. Masculina} & 699 & 2.542 & 4.549 & 8.778 & 835.115 & 12.860 & 5.130.994\\
+\hspace{1em}\textit{Pop. Feminina} & 710 & 2.478 & 4.539 & 8.720 & 916.792 & 13.317 & 5.313.532\\
+\hspace{1em}\textit{Pop. Feminina (15+ anos)} & 582 & 2.078 & 3.900 & 7.226 & 799.529 & 11.285 & 4.502.691\\
+\bottomrule
+\end{tabular}}
+\end{table}
+\rowcolors{2}{white}{white}
+
+O gráfico abaixo apresenta a pirâmide etária para o estado do Paraná. Observa-se que a população feminina tem uma distribuição mais homogênea na faixa etária de jovem a adulta (de 15 até 54 anos de idade):
+
+```{r warning=FALSE, message=FALSE, fig.align='center', echo=FALSE, fig.height=2.5, fig.width=4}
+rm(list=ls())
+
+library(tidyverse)
+library(readr)
+library(sf)
+
+# define os textos dos eixos x e y (lembre-se que coord_flip() inverte os eixos)
+y_labs <- paste0(as.character(c(seq(500, 0, -100), seq(100, 500, 100))), " Mil") %>%
+  str_replace("^0 Mil", "0")
+
+x_labs <- c(paste(seq(0, 75, by=5), "até", seq(4, 79, by=5)), "80 e mais")
+
+piramide_etaria <- read_rds("./Tabelas/base_parana.rds") %>%
+  st_set_geometry(NULL) %>%
+  select(starts_with("populacao_feminina"), starts_with("populacao_masculina")) %>% 
+  map_df(sum) %>%
+  gather(key = variavel, value = populacao) %>%
+  mutate(genero = c(rep("Feminina", 17), rep("Masculina", 17)),
+         faixa_etaria = rep(x_labs, 2))
+
+# organiza o dado para visualizar
+piramide_etaria$populacao <- ifelse(piramide_etaria$genero=="Masculina", 
+                                    -1 * piramide_etaria$populacao,
+                                    piramide_etaria$populacao)
+
+# visualiza a pirâmide
+ggplot(piramide_etaria, aes(x=faixa_etaria, y=populacao, fill=genero, color=genero)) +
+  #as barras
+  geom_bar(data=subset(piramide_etaria, genero=="Feminina" ), stat="identity", color="black", size=.2) +
+  geom_bar(data=subset(piramide_etaria, genero=="Masculina"), stat="identity", color="black", size=.2) +
+  # os textos do eixo
+  scale_y_continuous(breaks=seq(-500000, 500000, 100000), labels=y_labs) +
+  scale_x_discrete(labels=piramide_etaria$faixa_etaria[1:17]) + 
+  scale_fill_brewer(palette="Pastel1") +
+  # gira o eixo
+  coord_flip() +
+  # Formatação básica
+  labs(title = "Pirâmide Etária - Estado do Paraná",
+       subtitle = "Por gênero e faixa etária",
+       x = "Idade",
+       y = "População") +
+  theme(plot.title       = element_text(hjust=.5, size=9),
+        plot.subtitle    = element_text(hjust=.5, size=7),
+        legend.position  = c(.85,.85),
+        legend.title     = element_blank(),
+        legend.background= element_blank(), #rect(line='solid', color='black'),
+        legend.key.size  = unit(.2, "cm"),
+        axis.ticks       = element_line(),
+        legend.text      = element_text(size=6),
+        axis.text.x      = element_text(size=6),
+        axis.text.y      = element_text(size=6),
+        axis.line.x      = element_line(),
+        axis.line.y      = element_line(),
+        panel.background = element_blank(),
+        axis.title.x     = element_text(size=6),
+        axis.title.y     = element_blank())
+```
+
+
+# Neoplasia (câncer) maligna da mama, equipamentos e serviço de saúde.
+
+## Quadro Resumo
+
+```{r echo=FALSE, eval=FALSE}
+# a tabela abaixo é gerada no arquivo "3_Analise_esploratoria.rmd"
+```
+
+\rowcolors{2}{gray!6}{white}
+\begin{table}[!h]
+
+\caption{\label{tab:}Resumo - Indicadores de Saúde Pública}
+\centering
+\resizebox{\linewidth}{!}{\fontsize{7}{9}\selectfont\begin{tabular}[t]{lccccccc}
+\hiderowcolors
+\toprule
+ & Mínimo & Q1 & Mediana & Q3 & Máximo & Média & \% Zeros\\
+\midrule
+\showrowcolors
+\addlinespace[0.3em]
+\multicolumn{8}{l}{\textbf{Equiptos. de mamografia}}\\
+\hspace{1em}\textit{(por 1.000 mulheres)} & & & & & & &\\
+\hspace{1em}Existentes & 0,00 & 0,00 & 0,00 & 0,00 & 0,25 & 0,01 & 87.2\%\\
+\hspace{1em}Existentes e disp. pelo SUS & 0,00 & 0,00 & 0,00 & 0,00 & 0,20 & 0,01 & 89.5\%\\
+\hspace{1em}Em uso & 0,00 & 0,00 & 0,00 & 0,00 & 0,25 & 0,01 & 87.5\%\\
+\addlinespace[0.3em]
+\multicolumn{8}{l}{\textbf{Óbitos}}\\
+\hspace{1em}\makecell[l]{Óbitos por câncer de mama\\\textit{(por 1.000 mulheres)}} & 0,00 & 0,00 & 0,00 & 0,23 & 1,22 & 0,15 & 53.4\%\\
+\addlinespace[0.3em]
+\multicolumn{8}{l}{\textbf{Planos de saúde}}\\
+\hspace{1em}\makecell[l]{N° de beneficiárias de planos de saúde privado\\\textit{(por 1.000 mulheres)}} & 0,00 & 0,90 & 2,32 & 5,50 & 189,90 & 5,80 & 8.3\%\\
+\bottomrule
+\end{tabular}}
+\end{table}
+\rowcolors{2}{white}{white}
+
+## Distribuição espacial dos equipamentos de mamografia
+
+No mapa abaixo, pode-se notar a presença de um grande número de equipamentos de mamografia na região metrolopolitana de Curitiba, no norte do estado (região de Maringá e Londrina) e também no extremo sudoeste (região de Foz do Iguaçu). Já as regiões centrais e sul são mais desabastecidas de equipamentos de mamografia, principalmente ao se considerar os equipamentos disponíveis pelo SUS.
+
+
+```{r warning=FALSE, message=FALSE, fig.align='center', echo=FALSE, fig.height=5, fig.width=8}
+rm(list=ls())
+
+library(tmap)
+library(tidyverse)
+library(tmaptools)
+require(sf)
+library(readr)
+
+base_parana <- read_rds("./Tabelas/base_parana.rds") %>%
+  filter(mamografos_existentes > 0) %>%
+  mutate(mamografos_nao_sus = mamografos_existentes - mamografos_sus,
+         municipio = as.character(municipio))
+
+# Calculamos as barras separadamente
+mamografos_existentes <- base_parana %>%
+  st_set_geometry(NULL) %>% 
+  mutate(FID= factor(1:n())) %>% 
+  select(FID, mamografos_nao_sus, mamografos_sus) %>% 
+  gather(key=situacao, value=total, mamografos_nao_sus, mamografos_sus, factor_key=TRUE)
+
+# as cores da bara
+situacao_cols <- get_brewer_pal("Dark2", 2, plot = FALSE)
+
+# colocando os dados no geom_bar()
+grobs <- lapply(split(mamografos_existentes, mamografos_existentes$FID), function(x) {
+
+    ggplotGrob(ggplot(x, aes(x="", y=-total, fill=situacao)) +
+               geom_bar(width=1, stat="identity") +
+               scale_y_discrete(expand=c(0,0)) +
+               scale_fill_manual(values=situacao_cols) +
+               theme_ps(plot.axes = FALSE))
+})
+
+names(grobs) <- as.character(base_parana$municipio) 
+
+#  Agora gera o mapa: 1° camada - um shape completo só com polígonos
+tm_shape(read_rds("./Tabelas/base_parana.rds") %>% 
+           st_union() %>%
+           as("Spatial")) +
+  tm_polygons(col= "#F2F2F2", border.col = "black") +
+# 2° camada: destacando polígonos que contém equiptos
+tm_shape(base_parana %>%
+           mutate(mamografos_existentes = log10(mamografos_existentes+0.1))) +
+  tm_polygons(col="#FED9A6", border.col = "black") +
+  # 3° camada: tm_symbols insere as barras criadas anteriormente
+  tm_symbols(size="mamografos_existentes", shape="municipio", 
+             shapes=grobs, # ó as barras ae!
+             sizes.legend=c(0.5, 1, 1.5, 2), 
+             scale=1, 
+             legend.shape.show = FALSE, 
+             legend.size.is.portrait = FALSE, 
+             shapes.legend = 22, 
+             title.size = "Equiptos. \nexistentes",
+             id = "municipio",
+             popup.vars = c("mamografos_existentes_taxa", "mamografos_nao_sus",
+                            "mamografos_sus")) +
+  tm_add_legend(type="fill", 
+                col=situacao_cols, 
+                labels=c("SUS", "não-SUS"), 
+                title="Disponibilidade") +
+  tm_layout(legend.title.size = 1,
+            legend.text.size = 0.6,
+            legend.position = c("right","top"),
+            legend.bg.color = "white",
+            legend.bg.alpha = 1,
+            legend.format=list(text.align = "right"))+
+  tm_text("municipio", scale=0.5, root=4, size.lowerbound = .6, size=1,
+          bg.color="white", bg.alpha = .1, 
+          auto.placement = 1, legend.size.show = FALSE)
+```
+
+
+
+## Óbitos por câncer de mama - taxa por 1.000 mulheres
+
+O histograma abaixo revela que há um grande número de municípios (213 no total) com registro de óbitos por câncer de mama igual à zero. Curiosamente, todos os registros iguais a zero provém de municípios que não possuem equipamentos de mamografia, o que levanta a discussão sobre subnotificação e a presença dos chamados "falsos zeros" no processo gerador de dados de óbitos por cãncer de mama. Uma vez que não existe equipamento de mamografia em um município, aumenta-se a possibilidade de subnotificação de causas de morte.
+
+
+
+```{r warning=FALSE, message=FALSE, fig.align='center', echo=FALSE, fig.height=2.5, fig.width=6}
+rm(list=ls())
+
+library(readr)
+library(tidyverse)
+library(scales)
+
+taxa_obitos <- read_rds("./Tabelas/base_parana.rds") %>% 
+  st_set_geometry(NULL) %>%
+  mutate(tem_mamogr = ifelse(mamografos_existentes>0,
+                             "Com mamografo (51 municípios)",
+                             "Sem mamografo (348 municípios)") %>%
+                       as.factor()) %>%
+  select(obitos_total_idade_taxa, tem_mamogr) %>%
+  mutate(obitos = log(obitos_total_idade_taxa + 0.01))
+
+taxa_obitos %>%
+  ggplot(aes(x=obitos, fill=tem_mamogr)) +
+  geom_histogram(color="black", size = .2) +
+  geom_vline(aes(xintercept = mean(obitos), color="Média"),
+               linetype="dashed", size=.5) +
+  geom_vline(aes(xintercept = median(obitos), color="Mediana"),
+               linetype="dashed", size=.5) +
+  scale_color_manual(name = "", values = c("blue","red")) +
+  labs(title="Distribuição dos óbitos por neoplasia maligna na mama - Estado do Paraná",
+       subtitle="Todos os municípios (n = 399)",
+       x="Logarítmo da taxa óbitos por 1.000 mulheres (20 anos e mais)",
+       y="Frequência") +
+  theme(plot.title       = element_text(size=9, hjust = .5),
+        plot.subtitle    = element_text(size=7, hjust = .5),
+        legend.position  = "none",
+        legend.title     = element_blank(),
+        legend.background= element_rect(line='solid', color='white', size=.2),
+        legend.key.size  = unit(.2, "cm"),
+        axis.ticks       = element_line(),
+        legend.text      = element_text(size=6),
+        axis.text.x      = element_text(size=6),
+        axis.text.y      = element_text(size=6),
+        axis.line.x      = element_line(),
+        axis.line.y      = element_line(),
+        panel.background = element_blank(),
+        axis.title.x     = element_text(size=6),
+        axis.title.y     = element_text(size=6),
+        strip.text       = element_text(size=6, face="bold"),
+        strip.background = element_blank())  +
+  facet_grid(. ~ tem_mamogr)
+
+```
+
+Após exlcuir os municípios com registros de óbitos por cãncer de mama, percebemos no histograma que os municípios com equipamentos de mamografia possuem, em média, taxas de óbitos menores do que aqueles sem equipamento de mamografia.
+
+```{r warning=FALSE, message=FALSE, fig.align='center', echo=FALSE, fig.height=2.5, fig.width=6}
+
+
+
+
+taxa_obitos %>%
+  filter(obitos_total_idade_taxa>0) %>%
+  mutate(tem_mamogr = str_replace(tem_mamogr, "348", "135")) %>%
+  ggplot(aes(y=obitos, x=tem_mamogr, fill=tem_mamogr)) +
+  geom_boxplot(color="black", size = .2) +
+  scale_color_manual(name="", values=c("blue","red")) +
+  labs(title="Distribuição dos óbitos por neoplasia maligna na mama - Estado do Paraná",
+       subtitle="Municípios com taxas de óbitos > 0 (n = 186)",
+       y="Logarítmo da taxa de óbitos por 1.000 mulheres\n(20 anos e mais)",
+       x="") +
+  theme(plot.title       = element_text(size=9, hjust=.5, color="black"),
+        plot.subtitle    = element_text(size=7, hjust=.5),
+        legend.position  = "none",
+        legend.title     = element_blank(),
+        legend.background= element_rect(line='solid', color='white', size=.2),
+        legend.key.size  = unit(.2, "cm"),
+        axis.ticks       = element_line(),
+        legend.text      = element_text(size=6),
+        axis.text.x      = element_text(size=6),
+        axis.text.y      = element_text(size=6),
+        axis.line.x      = element_line(),
+        axis.line.y      = element_line(),
+        panel.background = element_blank(),
+        axis.title.x     = element_blank(),
+        axis.title.y     = element_text(size=6),
+        strip.text       = element_text(size=6, face="bold"),
+        strip.background = element_blank())
+
+```
+
+
+# Modelo _Probit_
+
+  O gráfico abaixo mostra um modelo _Probit_. O modelo estima a probabilidade de um município ter ou não ter o equipamento de mamografia com base na sua taxa de óbitos por câncer de mama.
+
+  
+
+
+```{r warning=FALSE, message=FALSE, fig.align='center', echo=FALSE, fig.height=6, fig.width=9}
+rm(list=ls())
+
+library(readr)
+library(tidyverse)
+library(scales)
+library(sf)
+library(broom)
+
+taxa_obitos <- read_rds("./Tabelas/base_parana.rds") %>% 
+#  st_set_geometry(NULL) %>%
+  mutate(tem_mamogr = ifelse(mamografos_existentes>0, 1, 0)) %>%
+  select(obitos_total_idade_taxa, tem_mamogr) %>%
+  filter(obitos_total_idade_taxa>0)
+ # mutate(obitos = log(obitos_total_idade_taxa + 0.01))
+
+
+# fit model
+mod <- glm(tem_mamogr ~ obitos_total_idade_taxa, data = taxa_obitos, family = binomial)
+taxa_obitos_plus <- augment(mod, type.predict="response") # augmented model
+
+
+# define binns
+lab <- c("0.057-0.132", "0.133-0.181", "0.182-0.243", "0.244-0.370", "0.370-0.505", "0.506-1.220")
+
+brk <- quantile(taxa_obitos$obitos_total_idade_taxa, probs=seq(0, 1, 1/6))
+
+classe <- cut(taxa_obitos$obitos_total_idade_taxa,
+    breaks=brk,
+    labels=lab,
+    right = T,
+    include.lowest=T)
+
+# binned table
+taxa_obitos_binned <- taxa_obitos %>%
+  mutate(classe = classe) %>%
+  group_by(classe) %>%
+  summarise(mean_obitos = mean(obitos_total_idade_taxa),
+            mamogr_rate = mean(tem_mamogr))
+
+# data space
+data_space <- ggplot(taxa_obitos_binned, aes(x=mean_obitos, y=mamogr_rate)) + 
+  geom_point() + 
+  geom_line()
+  
+# logistic model on probality scale
+data_space +
+  geom_line(data = taxa_obitos_plus, aes(x=obitos_total_idade_taxa,y=.fitted), color = "red") +
+
+  labs(title="Modelo logístico em escala de probabilidade",
+       x="Taxa média de óbito por câncer de mama nos municípios\n(agrupados por sextil)",
+       y="Probabilidade esperada de\nter ou não equipamento de mamografia no município",
+       caption="Foram excluídos municípios com taxa de óbito igual a zero, provavelmente são subnotificados") +
+  
+  theme(axis.title.x = element_text(size=12, face = "bold"),
+        axis.title.y = element_text(size=12, face = "bold"),
+        plot.caption = element_text(size=8),
+        plot.title= element_text(size=16, hjust=.5, color="black"),
+        axis.text = element_text(size=12))
+
+
+
+
+```
+
+
+  Municípios sem rede de atendimento tendem a não prevenir, diagnosticar e tratar o câncer de mama. Isso ocasiona em taxas de óbitos maiores nesses municípios. A presença de equipamentos de mamografia, por outro lado, proporciona uma rede de atendimento que resulta em menores taxas de óbitos por câncer de mama.
+
+
+\newpage
+
+***
+
+# Apêndice
+
+Quadro resumo somente para os municípios com presença de equipamentos de mamografia:
+
+\begin{table}[h]
+
+\caption{\label{tab:}Resumo - Equipamentos de mamografo}
+\centering
+\resizebox{\linewidth}{!}{\fontsize{7}{9}\selectfont
+\begin{tabular}[t]{lcccccc}
+\hiderowcolors
+\toprule
+\multicolumn{1}{c}{\bfseries  } & \multicolumn{3}{c}{\bfseries Números Absolutos} & \multicolumn{3}{c}{\bfseries Taxas por 1.000 Mulheres} \\
+\cmidrule(l{2pt}r{2pt}){2-4} \cmidrule(l{2pt}r{2pt}){5-7}
+& Existentes & Exist. (SUS) & Em uso & Existentes & Exist. (SUS) & Em uso\\
+\midrule
+\showrowcolors
+
+SANTA HELENA & 2 & 2 & 2 & 0,196 & 0,196 & 0,196\\
+PATO BRANCO & 8 & 5 & 8 & 0,250 & 0,157 & 0,250\\
+MATELÂNDIA & 1 & 1 & 1 & 0,147 & 0,147 & 0,147\\
+IVAIPORÃ & 2 & 2 & 2 & 0,142 & 0,142 & 0,142\\
+CHOPINZINHO & 1 & 1 & 1 & 0,120 & 0,120 & 0,120\\
+UBIRATÃ & 1 & 1 & 1 & 0,106 & 0,106 & 0,106\\
+LARANJEIRAS DO SUL & 1 & 1 & 1 & 0,077 & 0,077 & 0,077\\
+UMUARAMA & 4 & 3 & 4 & 0,089 & 0,067 & 0,089\\
+DOIS VIZINHOS & 1 & 1 & 1 & 0,065 & 0,065 & 0,065\\
+CIANORTE & 2 & 2 & 2 & 0,064 & 0,064 & 0,064\\
+CAMPINA GRANDE DO SUL & 1 & 1 & 1 & 0,063 & 0,063 & 0,063\\
+JACAREZINHO & 1 & 1 & 1 & 0,059 & 0,059 & 0,059\\
+FRANCISCO BELTRÃO & 7 & 2 & 6 & 0,204 & 0,058 & 0,175\\
+PALMAS & 1 & 1 & 1 & 0,058 & 0,058 & 0,058\\
+TOLEDO & 4 & 3 & 4 & 0,077 & 0,058 & 0,077\\
+SARANDI & 2 & 2 & 2 & 0,057 & 0,057 & 0,057\\
+GUARAPUAVA & 4 & 4 & 4 & 0,056 & 0,056 & 0,056\\
+APUCARANA & 3 & 3 & 3 & 0,056 & 0,056 & 0,056\\
+MEDIANEIRA & 3 & 1 & 3 & 0,165 & 0,055 & 0,165\\
+MARINGÁ & 18 & 9 & 17 & 0,110 & 0,055 & 0,104\\
+PARANAVAÍ & 2 & 2 & 2 & 0,055 & 0,055 & 0,055\\
+SANTO ANTÔNIO DA PLATINA & 1 & 1 & 1 & 0,055 & 0,055 & 0,055\\
+CAMPO MOURÃO & 2 & 2 & 2 & 0,052 & 0,052 & 0,052\\
+IBIPORÃ & 1 & 1 & 1 & 0,047 & 0,047 & 0,047\\
+CORNÉLIO PROCÓPIO & 3 & 1 & 3 & 0,142 & 0,047 & 0,142\\
+UNIÃO DA VITÓRIA & 1 & 1 & 1 & 0,044 & 0,044 & 0,044\\
+ARAPONGAS & 4 & 2 & 4 & 0,087 & 0,044 & 0,087\\
+IRATI & 1 & 1 & 1 & 0,041 & 0,041 & 0,041\\
+ROLÂNDIA & 1 & 1 & 1 & 0,039 & 0,039 & 0,039\\
+LONDRINA & 15 & 9 & 15 & 0,066 & 0,039 & 0,066\\
+PARANAGUÁ & 4 & 2 & 4 & 0,068 & 0,034 & 0,068\\
+TELÊMACO BORBA & 1 & 1 & 1 & 0,034 & 0,034 & 0,034\\
+FAZENDA RIO GRANDE & 1 & 1 & 0 & 0,030 & 0,030 & 0,000\\
+PONTA GROSSA & 6 & 4 & 6 & 0,045 & 0,030 & 0,045\\
+FOZ DO IGUAÇU & 5 & 3 & 5 & 0,046 & 0,027 & 0,046\\
+CASCAVEL & 8 & 3 & 8 & 0,064 & 0,024 & 0,064\\
+CURITIBA & 63 & 19 & 60 & 0,079 & 0,024 & 0,075\\
+CAMBÉ & 1 & 1 & 1 & 0,024 & 0,024 & 0,024\\
+CAMPO LARGO & 2 & 1 & 2 & 0,042 & 0,021 & 0,042\\
+ARAUCÁRIA & 2 & 1 & 2 & 0,040 & 0,020 & 0,040\\
+PINHAIS & 1 & 1 & 1 & 0,020 & 0,020 & 0,020\\
+COLOMBO & 3 & 1 & 2 & 0,034 & 0,011 & 0,022\\
+COLORADO & 1 & 0 & 1 & 0,103 & 0,000 & 0,103\\
+GUAÍRA & 1 & 0 & 1 & 0,076 & 0,000 & 0,076\\
+IBAITI & 1 & 0 & 1 & 0,083 & 0,000 & 0,083\\
+MARECHAL CÂNDIDO RONDON & 3 & 0 & 3 & 0,145 & 0,000 & 0,145\\
+PALOTINA & 1 & 0 & 1 & 0,079 & 0,000 & 0,079\\
+RIO NEGRO & 1 & 0 & 1 & 0,076 & 0,000 & 0,076\\
+SÃO JOSÉ DOS PINHAIS & 2 & 0 & 2 & 0,018 & 0,000 & 0,018\\
+SÃO MATEUS DO SUL & 1 & 0 & 1 & 0,059 & 0,000 & 0,059\\
+SÃO MIGUEL DO IGUAÇU & 1 & 0 & 1 & 0,091 & 0,000 & 0,091\\
+
+\textbf{TOTAL} & \textbf{207} & \textbf{105} & \textbf{200} & - & - & -\\
+
+\bottomrule
+\end{tabular}}
+\end{table}
+\rowcolors{2}{white}{white}
+
+
+
+
+
